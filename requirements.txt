@@ -6,3 +6,4 @@ pandas
 pytest
 httpx2
 mcp
+requests
