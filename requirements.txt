@@ -3,3 +3,7 @@ uvicorn
 sodapy
 python-dotenv
 pandas
+pytest
+httpx
+pytest
+httpx
