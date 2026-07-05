@@ -4,6 +4,5 @@ sodapy
 python-dotenv
 pandas
 pytest
-httpx
-pytest
-httpx
+httpx2
+mcp
