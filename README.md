@@ -75,7 +75,7 @@ The `.env` file is excluded from version control. A pre-cleaned CSV is included 
 .venv/bin/uvicorn main:app --reload
 ```
 
-The API starts at `http://127.0.0.1:8000`. Visit `/docs` for the interactive documentation.
+The API starts at `http://127.0.0.1:8000`.
 
 ---
 
@@ -87,7 +87,7 @@ To pull fresh data from the NYC Open Data portal:
 .venv/bin/python pipeline/ingest.py
 ```
 
-This fetches all Manhattan trees from the Socrata SODA API and writes them to `data/trees_manhattan.csv`.
+This fetches all Manhattan trees from the Socrata Open Data API and writes them to `data/trees_manhattan.csv`.
 
 ---
 
@@ -97,7 +97,15 @@ This fetches all Manhattan trees from the Socrata SODA API and writes them to `d
 .venv/bin/pytest tests/test_main.py -v
 ```
 
-17 tests covering all four endpoints: happy-path responses, authentication failures, validation errors, proximity filtering, and ordering guarantees.
+17 tests covering all four endpoints:
+
+| Group | Tests |
+|-------|-------|
+| Authentication (2) | missing key → `401`, incorrect key → `401` |
+| `GET /trees` (6) | list returned, default limit 100, `limit=5` returns 5 records, `health` filter, `status` filter, `limit=9999` → `422` |
+| `GET /trees/{tree_id}` (2) | valid ID → `200`, unknown ID → `404` |
+| `GET /trees/near` (4) | list returned, all results within radius, ordered by distance nearest first, missing `lat` → `422` |
+| `GET /stressors/summary` (3) | dict returned, all values integers, Stones is the most common stressor |
 
 ---
 
@@ -115,7 +123,7 @@ The REST API must be running before starting the MCP server:
 .venv/bin/python mcp_server/server.py
 ```
 
-The server communicates over stdio.
+The server communicates over stdio (standard input/output).
 
 ---
 
