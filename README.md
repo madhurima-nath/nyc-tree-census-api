@@ -90,6 +90,26 @@ The API starts at `http://127.0.0.1:8000`.
 
 ---
 
+## Troubleshooting
+
+**`ERROR: [Errno 48] Address already in use`**
+Port 8000 is already occupied, usually by a previous `uvicorn` process that didn't shut down cleanly. Find and stop it:
+```
+lsof -i :8000
+kill <PID>
+```
+Or just run on a different port: `.venv/bin/uvicorn main:app --reload --port 8001`.
+
+**Changes to `.env` aren't taking effect**
+`--reload` watches code files, not `.env`, so editing `API_KEY` (or any other value) while `uvicorn` is already running has no effect until you restart it manually:
+```
+# Ctrl+C to stop, then:
+.venv/bin/uvicorn main:app --reload
+```
+This applies whether you're testing the REST API directly or through the MCP tools — both read whatever key the REST API loaded at its last startup, not whatever is currently in the file.
+
+---
+
 ## Data ingestion
 
 To pull fresh data from the NYC Open Data portal:
@@ -135,6 +155,42 @@ The REST API must be running before starting the MCP server. The MCP server read
 ```
 
 The server communicates over stdio (standard input/output).
+
+### Testing the MCP tools directly
+
+Each tool is a regular Python function underneath the `@mcp.tool()` decorator, so you can test the underlying logic without going through the MCP protocol or an agent at all. With the REST API running, open a Python shell in the project root:
+
+```
+.venv/bin/python
+```
+
+```python
+from mcp_server.server import find_trees_near_location, get_tree_health_summary, get_stressor_flags
+
+print(find_trees_near_location(lat=40.7484, lon=-73.9857, radius_m=300))
+print(get_tree_health_summary())
+print(get_stressor_flags(tree_id=190422))
+```
+
+This confirms each function calls the REST API correctly, formats a sensible response, and doesn't crash. It's also the fastest way to check error handling — for example, temporarily removing `API_KEY` from `.env` (and starting a fresh shell, since the key loads on import) will surface how a missing key is handled.
+
+If the REST API rejects a request (missing or invalid `API_KEY`), all three tools return a plain-text error message rather than raising an exception, e.g.:
+
+```
+Error: request failed with status 401 (Not authenticated)
+```
+
+This is a sanity check on the tool logic, not a test of whether an agent would call the right tool for a given question — for that, see the [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) or a real MCP client such as Claude Desktop.
+
+### Connecting a real agent
+
+This repo implements the MCP server itself, but doesn't yet include configuration for wiring it up to a live agent (e.g. Claude Desktop's config file, pointing it at `mcp_server/server.py` over stdio). Doing so would let an agent choose which tool to call based on a natural-language question — a further step beyond what's tested here, and a natural direction for this project to grow into.
+
+---
+
+## Known limitations
+
+A small number of records in the source census have missing `spc_common` and/or `health` fields. These currently display as blank rather than being filtered out or replaced with a placeholder (e.g. "unknown species").
 
 ---
 
