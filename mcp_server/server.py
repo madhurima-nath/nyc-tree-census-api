@@ -28,6 +28,10 @@ def find_trees_near_location(lat: float, lon: float, radius_m: float = 200) -> s
         params={"lat": lat, "lon": lon, "radius_m": radius_m},
         headers=HEADERS,
     )
+    if response.status_code != 200:
+        detail = response.json().get("detail", "unknown error")
+        return f"Error: request failed with status {response.status_code} ({detail})"
+    
     trees = response.json()
 
     if not trees:
@@ -50,6 +54,11 @@ def get_tree_health_summary() -> str:
     Use this when asked about the overall health or common problems of NYC trees.
     """
     response = requests.get(f"{API_BASE}/stressors/summary", headers=HEADERS)
+    
+    if response.status_code != 200:
+        detail = response.json().get("detail", "unknown error")
+        return f"Error: request failed with status {response.status_code} ({detail})"
+    
     data = response.json()
 
     lines = [f"- {stressor}: {count:,} trees" for stressor, count in data.items()]
@@ -67,6 +76,10 @@ def get_stressor_flags(tree_id: str) -> str:
 
     if response.status_code == 404:
         return f"No tree found with ID {tree_id}."
+
+    if response.status_code != 200:
+        detail = response.json().get("detail", "unknown error")
+        return f"Error: request failed with status {response.status_code} ({detail})"
 
     t = response.json()
     return (
